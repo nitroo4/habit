@@ -1,4 +1,3 @@
-// lib/screens/calendar_screen.dart
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:animate_do/animate_do.dart';
@@ -75,8 +74,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
             pinned: true,
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             elevation: 0,
+            collapsedHeight: 160,      // <-- empêche réduction automatique
+            toolbarHeight: 0,          // <-- supprime l'espace de la toolbar par défaut
             flexibleSpace: FlexibleSpaceBar(
-              title: Column(
+              background: Column(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   Text(
@@ -104,35 +105,40 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 16),
                 ],
               ),
-              titlePadding: const EdgeInsets.only(bottom: 16),
+              titlePadding: EdgeInsets.zero,
               centerTitle: true,
             ),
           ),
-          SliverPadding(
-            padding: const EdgeInsets.all(20),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                FadeInUp(
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).cardTheme.color,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 10,
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          children: ['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((day) {
-                            return Expanded(
+          SliverFillRemaining(
+            hasScrollBody: true,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+              child: ListView(
+                physics: const BouncingScrollPhysics(),
+                children: [
+                  FadeInUp(
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardTheme.color,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 10,
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          // Jours de la semaine
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: ['L', 'M', 'M', 'J', 'V', 'S', 'D']
+                                .map((day) => Expanded(
                               child: Text(
                                 day,
                                 textAlign: TextAlign.center,
@@ -142,83 +148,94 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                   fontSize: 14,
                                 ),
                               ),
-                            );
-                          }).toList(),
-                        ),
-                        const SizedBox(height: 16),
-                        GridView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 7,
-                            childAspectRatio: 1,
+                            ))
+                                .toList(),
                           ),
-                          itemCount: totalCells,
-                          itemBuilder: (context, index) {
-                            final dayNumber = index - offset + 1;
-                            final isValid = dayNumber >= 1 && dayNumber <= daysInMonth;
+                          const SizedBox(height: 16),
+                          // Calendrier
+                          GridView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 7,
+                              childAspectRatio: 1,
+                            ),
+                            itemCount: totalCells,
+                            itemBuilder: (context, index) {
+                              final dayNumber = index - offset + 1;
+                              final isValid =
+                                  dayNumber >= 1 && dayNumber <= daysInMonth;
 
-                            if (!isValid) {
-                              return Container();
-                            }
+                              if (!isValid) return Container();
 
-                            final date = DateTime(_currentMonth.year, _currentMonth.month, dayNumber);
-                            final isToday = date.year == DateTime.now().year &&
-                                date.month == DateTime.now().month &&
-                                date.day == DateTime.now().day;
-                            final isCompleted = _isDayCompleted(date);
-                            final completionRate = _getDayCompletionRate(date);
+                              final date = DateTime(
+                                  _currentMonth.year, _currentMonth.month, dayNumber);
+                              final isToday = date.year == DateTime.now().year &&
+                                  date.month == DateTime.now().month &&
+                                  date.day == DateTime.now().day;
+                              final isCompleted = _isDayCompleted(date);
+                              final completionRate = _getDayCompletionRate(date);
 
-                            return AnimatedContainer(
-                              duration: const Duration(milliseconds: 300),
-                              margin: const EdgeInsets.all(4),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: isCompleted
-                                    ? AppTheme.primaryColor.withOpacity(0.2)
-                                    : Colors.transparent,
-                                border: isToday
-                                    ? Border.all(color: AppTheme.primaryColor, width: 2)
-                                    : null,
-                              ),
-                              child: Stack(
-                                alignment: Alignment.center,
-                                children: [
-                                  if (completionRate > 0 && completionRate < 1)
-                                    SizedBox(
-                                      width: 40,
-                                      height: 40,
-                                      child: CircularProgressIndicator(
-                                        value: completionRate,
-                                        strokeWidth: 3,
-                                        backgroundColor: Colors.grey.withOpacity(0.2),
-                                        valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                              return AnimatedContainer(
+                                duration: const Duration(milliseconds: 300),
+                                margin: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: isCompleted
+                                      ? AppTheme.primaryColor.withValues(alpha: 0.2)
+                                      : Colors.transparent,
+                                  border: isToday
+                                      ? Border.all(
+                                      color: AppTheme.primaryColor, width: 2)
+                                      : null,
+                                ),
+                                child: Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    if (completionRate > 0 && completionRate < 1)
+                                      SizedBox(
+                                        width: 40,
+                                        height: 40,
+                                        child: CircularProgressIndicator(
+                                          value: completionRate,
+                                          strokeWidth: 3,
+                                          backgroundColor:
+                                          Colors.grey.withValues(alpha: 0.2),
+                                          valueColor:
+                                          const AlwaysStoppedAnimation<Color>(
+                                              AppTheme.primaryColor),
+                                        ),
+                                      ),
+                                    Text(
+                                      dayNumber.toString(),
+                                      style: GoogleFonts.inter(
+                                        fontWeight:
+                                        isToday ? FontWeight.bold : FontWeight.normal,
+                                        color: isCompleted
+                                            ? AppTheme.primaryColor
+                                            : Theme.of(context)
+                                            .textTheme
+                                            .bodyLarge
+                                            ?.color,
                                       ),
                                     ),
-                                  Text(
-                                    dayNumber.toString(),
-                                    style: GoogleFonts.inter(
-                                      fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
-                                      color: isCompleted
-                                          ? AppTheme.primaryColor
-                                          : Theme.of(context).textTheme.bodyLarge?.color,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-                      ],
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 20),
-                FadeInUp(
-                  delay: const Duration(milliseconds: 200),
-                  child: _buildStatisticsCard(),
-                ),
-              ]),
+                  const SizedBox(height: 20),
+                  FadeInUp(
+                    delay: const Duration(milliseconds: 200),
+                    child: _buildStatisticsCard(),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -227,8 +244,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   Widget _buildStatisticsCard() {
-    final now = DateTime.now();
-    final monthStart = DateTime(_currentMonth.year, _currentMonth.month, 1);
     final monthEnd = DateTime(_currentMonth.year, _currentMonth.month + 1, 0);
 
     int totalCompleted = 0;
@@ -251,8 +266,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppTheme.secondaryColor.withOpacity(0.1),
-            AppTheme.primaryColor.withOpacity(0.05),
+            AppTheme.secondaryColor.withValues(alpha: 0.1),
+            AppTheme.primaryColor.withValues(alpha: 0.05),
           ],
         ),
         borderRadius: BorderRadius.circular(24),
@@ -344,7 +359,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: color, size: 18),

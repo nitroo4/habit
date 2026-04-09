@@ -1,31 +1,58 @@
-// lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'theme/app_theme.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/habits_screen.dart';
 import 'screens/calendar_screen.dart';
-import 'package:intl/date_symbol_data_local.dart';
+import 'screens/settings_screen.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  await initializeDateFormatting('fr_FR', null); // important !
-
+  Intl.defaultLocale = 'fr_FR';
   runApp(const HabitTrackerApp());
 }
 
-class HabitTrackerApp extends StatelessWidget {
+class HabitTrackerApp extends StatefulWidget {
   const HabitTrackerApp({super.key});
+
+  @override
+  State<HabitTrackerApp> createState() => _HabitTrackerAppState();
+}
+
+class _HabitTrackerAppState extends State<HabitTrackerApp> {
+  ThemeMode _themeMode = ThemeMode.system;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadThemePreference();
+  }
+
+  Future<void> _loadThemePreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    final themeModeIndex = prefs.getInt('themeMode') ?? 2;
+    setState(() {
+      _themeMode = ThemeMode.values[themeModeIndex];
+    });
+  }
+
+  void _changeTheme(ThemeMode themeMode) {
+    setState(() {
+      _themeMode = themeMode;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     SystemChrome.setSystemUIOverlayStyle(
       SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.light,
-        systemNavigationBarColor: AppTheme.backgroundDark,
+        statusBarIconBrightness: _themeMode == ThemeMode.dark ? Brightness.light : Brightness.dark,
+        systemNavigationBarColor: AppTheme.primaryColor,
         systemNavigationBarIconBrightness: Brightness.light,
       ),
     );
@@ -35,14 +62,26 @@ class HabitTrackerApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system,
-      home: const MainNavigationScreen(),
+      themeMode: _themeMode,
+      locale: const Locale('fr', 'FR'),
+      localizationsDelegates: [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('fr', 'FR'),
+        Locale('en', 'US'),
+      ],
+      home: MainNavigationScreen(onThemeChanged: _changeTheme),
     );
   }
 }
 
 class MainNavigationScreen extends StatefulWidget {
-  const MainNavigationScreen({super.key});
+  final Function(ThemeMode) onThemeChanged;
+
+  const MainNavigationScreen({super.key, required this.onThemeChanged});
 
   @override
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
@@ -51,11 +90,22 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _selectedIndex = 0;
 
-  final List<Widget> _screens = const [
-    DashboardScreen(),
-    HabitsScreen(),
-    CalendarScreen(),
-  ];
+  late List<Widget> _screens;
+
+  @override
+  void initState() {
+    super.initState();
+    _updateScreens();
+  }
+
+  void _updateScreens() {
+    _screens = [
+      const DashboardScreen(),
+      const HabitsScreen(),
+      const CalendarScreen(),
+      SettingsScreen(onThemeChanged: widget.onThemeChanged),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -107,6 +157,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               icon: Icon(Icons.calendar_today_outlined),
               activeIcon: Icon(Icons.calendar_month_rounded),
               label: 'Calendrier',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.settings_outlined),
+              activeIcon: Icon(Icons.settings_rounded),
+              label: 'Paramètres',
             ),
           ],
         ),

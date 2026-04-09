@@ -1,6 +1,5 @@
 // lib/widgets/habit_card.dart
 import 'package:flutter/material.dart';
-import 'package:animate_do/animate_do.dart';
 import 'package:google_fonts/google_fonts.dart';  // ✅ À AJOUTER
 import '../models/habit.dart';
 import '../theme/app_theme.dart';  // ✅ À AJOUTER

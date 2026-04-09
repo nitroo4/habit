@@ -1,10 +1,10 @@
 // lib/screens/habits_screen.dart
 import 'package:flutter/material.dart';
 import 'package:animate_do/animate_do.dart';
-import 'package:google_fonts/google_fonts.dart';  // ✅ À AJOUTER
+import 'package:google_fonts/google_fonts.dart';
 import '../models/habit.dart';
 import '../widgets/habit_card.dart';
-import '../theme/app_theme.dart';  // ✅ À AJOUTER
+import '../theme/app_theme.dart';
 import 'create_habit_screen.dart';
 
 class HabitsScreen extends StatefulWidget {
@@ -55,36 +55,34 @@ class _HabitsScreenState extends State<HabitsScreen> {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          SliverAppBar(
-            expandedHeight: 120,
-            floating: true,
-            pinned: true,
-            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-            elevation: 0,
-            flexibleSpace: FlexibleSpaceBar(
-              title: Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Mes habitudes',
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      color: AppTheme.textSecondaryLight,
+          SliverToBoxAdapter(
+            child: SafeArea(
+              top: true,
+              bottom: false, // ← ignore le padding automatique en bas
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 20, 24, 0), // <-- change 16 en 0
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Mes habitudes',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: AppTheme.textSecondaryLight,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '$completedToday/${habits.length} complétées',
-                    style: GoogleFonts.inter(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                    const SizedBox(height: 4),
+                    Text(
+                      '$completedToday/${habits.length} complétées',
+                      style: GoogleFonts.inter(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-              titlePadding: const EdgeInsets.only(left: 24, bottom: 16),
             ),
           ),
           if (habits.isEmpty)
@@ -96,7 +94,7 @@ class _HabitsScreenState extends State<HabitsScreen> {
                     Icon(
                       Icons.checklist_outlined,
                       size: 80,
-                      color: Colors.grey.withOpacity(0.3),
+                      color: Colors.grey.withValues(alpha: 0.3),
                     ),
                     const SizedBox(height: 16),
                     Text(
@@ -135,27 +133,25 @@ class _HabitsScreenState extends State<HabitsScreen> {
               ),
             )
           else
-            SliverPadding(
-              padding: const EdgeInsets.all(20),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                    return FadeInUp(
-                      from: 20,
-                      duration: const Duration(milliseconds: 500),
-                      delay: Duration(milliseconds: index * 100),
-                      child: HabitCard(
-                        habit: habits[index],
-                        onToggle: (isChecked) => _toggleHabit(habits[index], isChecked),
-                      ),
-                    );
-                  },
-                  childCount: habits.length,
-                ),
+            SliverList(
+              delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                  return FadeInUp(
+                    from: 20,
+                    duration: const Duration(milliseconds: 500),
+                    delay: Duration(milliseconds: index * 100),
+                    child: HabitCard(
+                      habit: habits[index],
+                      onToggle: (isChecked) => _toggleHabit(habits[index], isChecked),
+                    ),
+                  );
+                },
+                childCount: habits.length,
               ),
             ),
         ],
       ),
+
       floatingActionButton: FadeInUp(
         from: 50,
         duration: const Duration(milliseconds: 500),
